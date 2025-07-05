@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GM73 PhishRadar - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1><span class="gm73">GM73</span> PhishRadar Dashboard</h1>
+        <p class="subtitle">Your Cybersecurity Training Progress</p>
+    </header>
+
+    <main class="dashboard-main">
+        <div class="back-to-training">
+            <a href="index.html" class="btn">← Back to Training</a>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h2>Detection Accuracy</h2>
+                <canvas id="accuracyChart"></canvas>
+            </div>
+
+            <div class="stat-card">
+                <h2>Current Streak</h2>
+                <div class="big-number" id="currentStreak">0</div>
+                <p>Best streak: <span id="bestStreak">0</span></p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Scenarios Completed</h2>
+                <div class="big-number" id="scenariosCompleted">0</div>
+                <p>Correct: <span id="correctAnswers">0</span> | Incorrect: <span id="incorrectAnswers">0</span></p>
+            </div>
+
+            <div class="stat-card full-width">
+                <h2>Quiz History</h2>
+                <canvas id="quizHistoryChart"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>GM73 Cybersecurity Training | Front-End Simulation</p>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProgress();
+            renderDashboard();
+        });
+
+        function renderDashboard() {
+            // Calculate accuracy
+            const totalAttempts = userStats.correct + userStats.incorrect;
+            const accuracy = totalAttempts > 0 ? Math.round((userStats.correct / totalAttempts) * 100) : 0;
+
+            // Update DOM elements
+            document.getElementById('currentStreak').textContent = userStats.streak;
+            document.getElementById('bestStreak').textContent = userStats.maxStreak;
+            document.getElementById('scenariosCompleted').textContent = userStats.scenariosCompleted.length;
+            document.getElementById('correctAnswers').textContent = userStats.correct;
+            document.getElementById('incorrectAnswers').textContent = userStats.incorrect;
+
+            // Render accuracy chart
+            const accuracyCtx = document.getElementById('accuracyChart').getContext('2d');
+            new Chart(accuracyCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Correct', 'Incorrect'],
+                    datasets: [{
+                        data: [userStats.correct, userStats.incorrect],
+                        backgroundColor: ['#50fa7b', '#ff5555'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((acc, curr) => acc + curr, 0);
+                                    const value = context.raw;
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${context.label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Render quiz history chart if available
+            if (userStats.quizScores.length > 0) {
+                const quizHistoryCtx = document.getElementById('quizHistoryChart').getContext('2d');
+                new Chart(quizHistoryCtx, {
+                    type: 'line',
+                    data: {
+                        labels: userStats.quizScores.map((_, i) => `Quiz ${i + 1}`),
+                        datasets: [{
+                            label: 'Quiz Scores',
+                            data: userStats.quizScores.map(quiz => quiz.score),
+                            backgroundColor: 'rgba(100, 255, 218, 0.2)',
+                            borderColor: 'rgba(100, 255, 218, 1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.parsed.y + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
